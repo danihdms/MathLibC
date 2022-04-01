@@ -116,44 +116,72 @@ int unbounded_int_cmp_ll(unbounded_int a, long long b) {
 
 // Prend deux unbounded_int et renvoie leur somme
 unbounded_int unbounded_int_somme(unbounded_int a, unbounded_int b) {
+    if(&a == NULL && &b != NULL) return b;
+    if(&b == NULL && &a != NULL) return a;
+    if(&a == NULL && &b == NULL) return;
+    if(a.signe == '*' || b.signe == '*'){
+        printf("%s", "Either a or b is not a number.");
+        return;
+    }
     if(a.signe == '-' && b.signe == '+') return unbounded_int_difference(b, a);
     if(a.signe == '+' && b.signe == '-') return unbounded_int_difference(a, b);
-
+    
     unbounded_int res;
-    int max = a.len;
-    if(a.len < b.len) max = b.len;
-    chiffre *tmpA = a.dernier;
-    chiffre *tmpB = b.dernier;
-    chiffre *tmpRes = res.dernier->suivant;
-    int rest = 0;
+    chiffre *dernier = malloc(sizeof(chiffre));
+    if(dernier == NULL) abort();
+    int remainder = 0;
+    res.dernier = dernier;
+    res.dernier->suivant = NULL;
 
+    int sommeDernier = atoi(a.dernier->c) + atoi(b.dernier->c);
+    if(sommeDernier >= 10) {
+        dernier->c = '0';
+        remainder = sommeDernier % 10;
+    } else dernier->c = (char) sommeDernier;
 
-    while (tmpA != NULL && tmpB != NULL){
-        int tmpSomme = atoi(tmpA->c) + atoi(tmpB->c + rest);
-        if(tmpSomme >= 10) {
-            rest = tmpSomme - 10;
-            chiffre *prev;
-            prev->c = (char) (0 + rest);
-            prev->suivant = tmpRes;
-            tmpRes->precedent = prev;
-            tmpRes = tmpRes->precedent;
-        } else {
-            rest = tmpSomme ;
-            chiffre *prev;
-            if(tmpSomme + rest > 10){
-                prev->c = '0';
-                rest += tmpSomme - 10;
-            } else {
-                prev->c = (char) (tmpSomme + rest);
-            }
-            prev->suivant = tmpRes;
-            tmpRes->precedent = prev;
-            tmpRes = tmpRes->precedent;
+    chiffre *chiffrePrecA = a.dernier;
+    chiffre *chiffrePrecB = b.dernier;
+    chiffre *chiffrePrecRes = res.dernier;
+
+    while(chiffrePrecA != NULL || chiffrePrecB != NULL) {
+        chiffre *tmp = malloc(sizeof(chiffre));
+        if(tmp == NULL) abort();
+
+            
+        if(chiffrePrecA->precedent == NULL && chiffrePrecB->precedent == NULL) {
+            // Si c'est le dernier chiffre et que la somme est supérieure a 10, il faut écrire directement 
+            // cette somme en tant que 2 chiffre (exemple, 7+8 = 15, on doit creer un chiffre avec 5 et un chiffre avec 1 qui sera
+            // le premier du unbint).
         }
-        tmpA = tmpA->precedent;
-        tmpB = tmpB->suivant;
+        
+        if(chiffrePrecA == NULL && chiffrePrecB != NULL) {
+            int somme = atoi(chiffrePrecB->c) + remainder;
+            if(somme >= 10) {
+                tmp->c = '0';
+                remainder = somme % 10;
+            } else tmp->c = (char) somme;
+            tmp->suivant = chiffrePrecRes;
+            chiffrePrecRes->precedent = tmp;
+        } else if(chiffrePrecB == NULL && chiffrePrecA != NULL) {
+            int somme = atoi(chiffrePrecA->c) + remainder;
+            if(somme >= 10) {
+                tmp->c = '0';
+                remainder = somme % 10;
+            } else tmp->c = (char) somme;
+            tmp->suivant = chiffrePrecRes;
+            chiffrePrecRes->precedent = tmp;
+        } else {
+            int somme = atoi(chiffrePrecA->c) + atoi(chiffrePrecB->c) + remainder;
+            if(somme >= 10) {
+                tmp->c = '0';
+                remainder = somme % 10;
+            } else tmp->c = (char) somme;
+            tmp->suivant = chiffrePrecRes;
+            chiffrePrecRes->precedent = tmp;
+        }
+        chiffrePrecRes = tmp;
     }
-    res.premier = tmpRes;    
+    res.premier = chiffrePrecRes;
 }
 
 // Prend deux unbounded_int et renvoie leur différence
