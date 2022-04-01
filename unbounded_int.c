@@ -98,7 +98,21 @@ int unbounded_int_cmp_unbounded_int(unbounded_int a, unbounded_int b) {
 
 // Prend un unbounded_int et un entier et les compares
 // renvoie -1 si a < b, 0 si a == b et 1 si a > b
-int unbounded_int_cmp_ll(unbounded_int a, long long b);
+int unbounded_int_cmp_ll(unbounded_int a, long long b) {
+    if (a.signe == '*') return -2;
+
+    char *c = convertIntToString(b);
+    if (a.signe == '-' && b > 0 || a.len < strlen(c)) return -1;
+    if (a.signe == '+' && b < 0 || a.len > strlen(c)) return 1;
+
+    chiffre *tmp = a.premier;
+    for (int i = 0; i < strlen(c); i++) {
+        if (tmp->c < c[i]) return -1;
+        if (tmp->c > c[i]) return 1;
+        tmp = tmp->suivant;
+    }
+    return 0;
+}
 
 // Prend deux unbounded_int et renvoie leur somme
 unbounded_int unbounded_int_somme(unbounded_int a, unbounded_int b) {
