@@ -62,7 +62,22 @@ unbounded_int ll2unbounded_int(long long i) {
 
 // Prend en argument un unbounded_int et renvoie la chaîne de
 // caractères correspondant
-char *unbounded_int2string(unbounded_int i);
+char *unbounded_int2string(unbounded_int i) {
+  if (i.premier == NULL) {
+    char *res = calloc(2, sizeof(char));
+    res[0] = '0';
+    res[1] = '\0';
+    return res;
+  }
+  char *res = calloc(i.len + 1, sizeof(char));
+  chiffre tmp = *(i.premier);
+  for (int n = 0; n < i.len; n++) {
+    res[n] = tmp.c;
+    tmp = *(tmp.suivant);
+  }
+  res[i.len] = '\0';
+  return res;
+}
 
 // Prend deux unbounded_int et les compares
 // renvoie -1 si a < b, 0 si a == b et 1 si a > b
@@ -92,14 +107,39 @@ unbounded_int unbounded_int_somme(unbounded_int a, unbounded_int b) {
 
     unbounded_int res;
     int max = a.len;
+    if(a.len < b.len) max = b.len;
     chiffre *tmpA = a.dernier;
     chiffre *tmpB = b.dernier;
-    chiffre *prev;
+    chiffre *tmpRes = res.dernier->suivant;
+    int rest = 0;
 
-    if(a.len < b.len) max = b.len;
+
     while (tmpA != NULL && tmpB != NULL){
-
-    }    
+        int tmpSomme = atoi(tmpA->c) + atoi(tmpB->c + rest);
+        if(tmpSomme >= 10) {
+            rest = tmpSomme - 10;
+            chiffre *prev;
+            prev->c = (char) (0 + rest);
+            prev->suivant = tmpRes;
+            tmpRes->precedent = prev;
+            tmpRes = tmpRes->precedent;
+        } else {
+            rest = tmpSomme ;
+            chiffre *prev;
+            if(tmpSomme + rest > 10){
+                prev->c = '0';
+                rest += tmpSomme - 10;
+            } else {
+                prev->c = (char) (tmpSomme + rest);
+            }
+            prev->suivant = tmpRes;
+            tmpRes->precedent = prev;
+            tmpRes = tmpRes->precedent;
+        }
+        tmpA = tmpA->precedent;
+        tmpB = tmpB->suivant;
+    }
+    res.premier = tmpRes;    
 }
 
 // Prend deux unbounded_int et renvoie leur différence
