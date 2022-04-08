@@ -1,8 +1,4 @@
 #include "unbounded_int.h"
-#include <stdlib.h>
-#include <stdio.h>
-#include <math.h>
-#include <string.h>
 
 // Prend un int et renvoie l'adresse d'une chaine de caractères correspondante
 static char *convertIntToString(long long i){
@@ -180,7 +176,62 @@ unbounded_int unbounded_int_somme(unbounded_int a, unbounded_int b) {
 
 // Prend deux unbounded_int et renvoie leur différence
 unbounded_int unbounded_int_difference(unbounded_int a, unbounded_int b) {
-    return;
+    if (a.signe == '*' || b.signe == '*') exit(5);
+    if ((a.signe == '+' && b.signe == '-') || (a.signe == '-' && b.signe == '+')) return unbounded_int_somme(a, b);
+
+    int compare = unbounded_int_cmp_unbounded_int(a, b);
+    chiffre *tmpA, *tmpB;
+    if (compare == 1) {
+        tmpA = a.dernier;
+        tmpB = b.dernier;
+    } else if (compare == -1) {
+        tmpA = b.dernier;
+        tmpB = a.dernier;
+    } else {
+        return string2unbounded_int("0");
+    }
+
+    char signe = '+';
+    if ((a.signe == '+' && compare == -1) || (a.signe == '-' && compare == 1)) signe = '-';
+
+    chiffre *tmpRes = NULL;
+    unbounded_int res = {.len = 0, .signe = signe, .dernier = tmpRes, .premier = NULL};
+    int dernierEstDetermine = 0;
+    int reste = 0;
+
+    while (tmpA != NULL) {
+        chiffre *difference = malloc(sizeof(chiffre));
+        if (tmpB == NULL) {
+            difference->c = tmpA->c;
+        } else {
+            int chiffreA = tmpA->c - '0';
+            int chiffreB = tmpB->c - '0';
+            if (chiffreA >= chiffreB + reste) {
+                difference->c = '0' + chiffreA - chiffreB - reste;
+                reste = 0;
+            } else {
+                difference->c = '0' + chiffreA + 10 - chiffreB - reste;
+                reste = 1;
+            }
+        }
+
+        difference->precedent = NULL;
+        difference->suivant = tmpRes;
+        tmpRes->precedent = difference;
+        res.len += 1;
+
+        if (dernierEstDetermine == 0) {
+            res.dernier = difference;
+            dernierEstDetermine = 1;
+        }
+
+        tmpA = tmpA->precedent;
+        tmpB = tmpB->precedent;
+        tmpRes = tmpRes->precedent;
+    }
+
+    res.premier = tmpRes;
+    return res;
 }
 
 // Prend deux unbounded_int et renvoie leur produit
