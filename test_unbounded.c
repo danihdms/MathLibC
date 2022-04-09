@@ -11,12 +11,14 @@ Le fichier exécutable sera "programme".
 */
 
 int main(int argc, char const *argv[]) {
-    printf("Appel à string2unbounded_int\n");
-    unbounded_int a = string2unbounded_int("39000");
-    printf("Fin d'appel à string2unbounded_int\n");
-    unbounded_int b = ll2unbounded_int(5);
+    unbounded_int a = string2unbounded_int("4");
+    unbounded_int b = ll2unbounded_int(3);
     char *texteA = unbounded_int2string(a);
     char *texteB = unbounded_int2string(b);
-    printf("a = %s\nb = %s", texteA, texteB);
+    printf("a = %s\nb = %s\n", texteA, texteB);
+
+    // unbounded_int diff = unbounded_int_difference(a, b);
+    // char *texteDiff = unbounded_int2string(diff);
+    // printf("%s - %s = %s\n", texteA, texteB, texteDiff);
     return 0;
 }

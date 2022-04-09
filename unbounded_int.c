@@ -94,17 +94,27 @@ char *unbounded_int2string(unbounded_int i) {
         res[1] = '\0';
         return res;
     }
-    char *res = calloc(i.len + 1, sizeof(char));
+    char *res;
+    if (i.signe == '+') res = calloc(i.len + 1, sizeof(char));
+    else res = calloc(i.len + 2, sizeof(char));
     if (res == NULL) {
         perror("unbounded_int2string : calloc a échoué");
         exit(1);
     }
+
     chiffre *tmp = i.premier;
     for (int n = 0; n < i.len; n++) {
-        res[n] = tmp->c;
+        if (i.signe == '+') res[n] = tmp->c;
+        else res[n + 1] = tmp->c;
         tmp = tmp->suivant;
     }
-    res[i.len] = '\0';
+
+    if (i.signe == '+') {
+        res[i.len] = '\0';
+    } else {
+        res[0] = '-';
+        res[i.len + 1] = '\0';
+    }
     return res;
 }
 
@@ -286,8 +296,11 @@ unbounded_int unbounded_int_produit(unbounded_int a, unbounded_int b) {
 
     chiffre *tmpA = a.dernier;
     chiffre *tmpB = b.dernier;
-    chiffre *tmpRes = res.dernier;
+    chiffre *tmpRes;
     for (int i = 0; i < b.len; i++) {
+        tmpRes = res.dernier;
+        for (int j = 0; j < i; i++) tmpRes = tmpRes->precedent;
+
         int r = 0;
         if (tmpB->c == '0') continue;
 
@@ -298,8 +311,6 @@ unbounded_int unbounded_int_produit(unbounded_int a, unbounded_int b) {
             tmpA = tmpA->suivant;
         }
 
-        tmpRes = res.dernier;
-        for (int j = 0; j < i; i++) tmpRes = tmpRes->precedent;
         tmpB = tmpB->suivant;
     }
 
