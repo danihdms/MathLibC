@@ -16,7 +16,7 @@ int main(int argc, char const *argv[]) {
     printf("Fin d'appel à string2unbounded_int\n");
     unbounded_int b = ll2unbounded_int(5);
     char *texteA = unbounded_int2string(a);
-    //char *texteB = unbounded_int2string(b);
-    //printf("a = %s\nb = %s", texteA, texteB);
+    char *texteB = unbounded_int2string(b);
+    printf("a = %s\nb = %s", texteA, texteB);
     return 0;
 }

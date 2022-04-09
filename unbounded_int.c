@@ -45,35 +45,31 @@ static void ajouteDernier(unbounded_int i, char e) {
 // Prend l'adresse d'une chaîne de caractères et renvoie le
 // unbounded_int correspondant
 unbounded_int string2unbounded_int(const char *e) {
-    chiffre *premier = malloc(sizeof(chiffre));
-    chiffre *dernier = malloc(sizeof(chiffre));
-    if (premier == NULL || dernier == NULL) {
-        perror("string2unbounded_int : malloc a échoué");
-        exit(1);
-    }
-    premier->precedent = NULL;
-    dernier->suivant = NULL;
-
-    chiffre *tmp = NULL;
-    for(int j = 0; j < sizeof(*e)/sizeof(char); j++){
-        chiffre *next = malloc(sizeof(chiffre));
-        next->c = e[j];
-        next->precedent = tmp;
-        if(tmp != NULL){
-            tmp->suivant = next;
-        }
-        tmp = next;
-    }
+    int j = 0;
     char signe = '*';
     if(*e == '-') {
         signe = '-';
+        j = 1;
     } else signe = '+';
-    unbounded_int res = {.signe = signe, .dernier = dernier, .premier = premier, .len = sizeof(*e)/sizeof(char)};
-    if(premier == NULL || dernier == NULL){
-        res.signe = '*';
-        perror("Malloc a échoué");
-        return res;
+    unbounded_int res = {.signe = signe, .len = 0, .premier = NULL, .dernier = NULL};
+    chiffre *tmpChiffre = NULL;
+
+    for(int i = j; i < sizeof(*e)/sizeof(char); i++){
+        chiffre *tmp = malloc(sizeof(chiffre));
+         if (tmp == NULL) {
+            perror("string2unbounded_int, tmp : malloc a échoué");
+            exit(1);
+        }
+        tmp->c = e[i];
+        tmp->precedent = tmpChiffre;
+        tmp->suivant = NULL;
+        tmpChiffre = tmp;
+        res.len += 1;
+        if(i == j) {
+            res.premier = tmpChiffre;
+        }
     }
+    res.dernier = tmpChiffre;
     return res;
 }
 
