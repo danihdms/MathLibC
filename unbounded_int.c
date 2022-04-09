@@ -88,13 +88,17 @@ unbounded_int ll2unbounded_int(long long i) {
 char *unbounded_int2string(unbounded_int i) {
     if (i.premier == NULL) {
         char *res = calloc(2, sizeof(char));
+        if (res == NULL) {
+            perror("unbounded_int2string : calloc a échoué");
+            exit(1);
+        }
         res[0] = '0';
         res[1] = '\0';
         return res;
     }
     char *res = calloc(i.len + 1, sizeof(char));
     if (res == NULL) {
-        perror("unbounded_int2string : malloc a échoué");
+        perror("unbounded_int2string : calloc a échoué");
         exit(1);
     }
     chiffre *tmp = i.premier;
