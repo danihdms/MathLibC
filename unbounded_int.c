@@ -8,13 +8,13 @@ static char *convertIntToString(long long i){
         acc++;
         n = n/10;
     }
-    n = i;
+    n = abs(i);
     char *numbers = calloc(acc, sizeof(char));
     if(numbers == NULL){
         abort();
     }
     for(int j = 0; j < acc; j++){
-        numbers[j] = n % 10;
+        numbers[j] = n % 10 + '0';
         n /= 10;
     }
     return numbers;
@@ -54,7 +54,7 @@ unbounded_int string2unbounded_int(const char *e) {
     unbounded_int res = {.signe = signe, .len = 0, .premier = NULL, .dernier = NULL};
     chiffre *tmpChiffre = NULL;
 
-    for(int i = j; i < sizeof(*e)/sizeof(char); i++){
+    for(int i = j; i < sizeof(*e); i++){ // IL NE RENTRE PAS DANS MON FOR WTF
         chiffre *tmp = malloc(sizeof(chiffre));
          if (tmp == NULL) {
             perror("string2unbounded_int, tmp : malloc a échoué");
@@ -76,7 +76,9 @@ unbounded_int string2unbounded_int(const char *e) {
 // Prend un nombre et renvoie le unbounded_int correspondant
 unbounded_int ll2unbounded_int(long long i) {
     char *numbers = convertIntToString(i);
-    return string2unbounded_int(numbers);
+    unbounded_int res = string2unbounded_int(numbers);
+    res.signe = (i < 0) ? '-' : '+';
+    return res;
 }    
 
 // Prend en argument un unbounded_int et renvoie la chaîne de
@@ -116,10 +118,10 @@ int unbounded_int_cmp_unbounded_int(unbounded_int a, unbounded_int b) {
     chiffre *tmpA = a.premier;
     chiffre *tmpB = b.premier;
     while (tmpA != NULL) {
-        if(a.signe == '-' && tmpA < tmpB) return 1;
-        if(a.signe == '-' && tmpA > tmpB) return -1;
-        if(tmpA->c < tmpB->c) return -1;
-        if(tmpA->c > tmpB->c) return 1;
+        if(a.signe == '-' && tmpA->c - '0' < tmpB->c - '0') return 1;
+        if(a.signe == '-' && tmpA->c - '0' > tmpB->c - '0') return -1;
+        if(tmpA->c - '0' < tmpB->c - '0') return -1;
+        if(tmpA->c - '0' > tmpB->c - '0') return 1;
         tmpA = tmpA->suivant;
         tmpB = tmpB->suivant;
     }

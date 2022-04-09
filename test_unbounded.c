@@ -12,7 +12,7 @@ Le fichier exécutable sera "programme".
 
 int main(int argc, char const *argv[]) {
     printf("Appel à string2unbounded_int\n");
-    unbounded_int a = string2unbounded_int("3");
+    unbounded_int a = string2unbounded_int("39000");
     printf("Fin d'appel à string2unbounded_int\n");
     unbounded_int b = ll2unbounded_int(5);
     char *texteA = unbounded_int2string(a);
