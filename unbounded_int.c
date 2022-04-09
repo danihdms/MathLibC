@@ -20,11 +20,37 @@ static char *convertIntToString(long long i){
     return numbers;
 }
 
+static void ajouteDernier(unbounded_int i, char e) {
+    chiffre *ajout = malloc(sizeof(chiffre));
+    if (ajout == NULL) {
+        perror("ajouteDernier : malloc a échoué");
+        exit(1);
+    }
+    ajout->c = e;
+    ajout->suivant = NULL;
+    
+    if (i.dernier == NULL) {
+        ajout->precedent = NULL;
+        i.premier = ajout;
+    } else {
+        ajout->precedent = i.dernier;
+        i.dernier->suivant = ajout;
+        i.dernier = ajout;
+    }
+
+    i.dernier = ajout;
+    i.len++;
+}
+
 // Prend l'adresse d'une chaîne de caractères et renvoie le
 // unbounded_int correspondant
 unbounded_int string2unbounded_int(const char *e) {
     chiffre *premier = malloc(sizeof(chiffre));
     chiffre *dernier = malloc(sizeof(chiffre));
+    if (premier == NULL || dernier == NULL) {
+        perror("string2unbounded_int : malloc a échoué");
+        exit(1);
+    }
     premier->precedent = NULL;
     dernier->suivant = NULL;
 
@@ -60,20 +86,24 @@ unbounded_int ll2unbounded_int(long long i) {
 // Prend en argument un unbounded_int et renvoie la chaîne de
 // caractères correspondant
 char *unbounded_int2string(unbounded_int i) {
-  if (i.premier == NULL) {
-    char *res = calloc(2, sizeof(char));
-    res[0] = '0';
-    res[1] = '\0';
+    if (i.premier == NULL) {
+        char *res = calloc(2, sizeof(char));
+        res[0] = '0';
+        res[1] = '\0';
+        return res;
+    }
+    char *res = calloc(i.len + 1, sizeof(char));
+    if (res == NULL) {
+        perror("unbounded_int2string : malloc a échoué");
+        exit(1);
+    }
+    chiffre *tmp = i.premier;
+    for (int n = 0; n < i.len; n++) {
+        res[n] = tmp->c;
+        tmp = tmp->suivant;
+    }
+    res[i.len] = '\0';
     return res;
-  }
-  char *res = calloc(i.len + 1, sizeof(char));
-  chiffre tmp = *(i.premier);
-  for (int n = 0; n < i.len; n++) {
-    res[n] = tmp.c;
-    tmp = *(tmp.suivant);
-  }
-  res[i.len] = '\0';
-  return res;
 }
 
 // Prend deux unbounded_int et les compares
@@ -131,6 +161,10 @@ unbounded_int unbounded_int_somme(unbounded_int a, unbounded_int b) {
     int i = 0;
     while(tmpA != NULL || tmpB != NULL) {
         chiffre *tmpSomme = malloc(sizeof(chiffre));
+        if (tmpSomme == NULL) {
+            perror("unbounded_int_somme : malloc a échoué");
+            exit(1);
+        }
         if(tmpSomme == NULL) {
             res.signe = '*';
         }
@@ -201,6 +235,10 @@ unbounded_int unbounded_int_difference(unbounded_int a, unbounded_int b) {
 
     while (tmpA != NULL) {
         chiffre *difference = malloc(sizeof(chiffre));
+        if (difference == NULL) {
+            perror("unbounded_int_difference : malloc a échoué");
+            exit(1);
+        }
         if (tmpB == NULL) {
             difference->c = tmpA->c;
         } else {
@@ -218,7 +256,7 @@ unbounded_int unbounded_int_difference(unbounded_int a, unbounded_int b) {
         difference->precedent = NULL;
         difference->suivant = tmpRes;
         tmpRes->precedent = difference;
-        res.len += 1;
+        res.len++;
 
         if (dernierEstDetermine == 0) {
             res.dernier = difference;
@@ -235,6 +273,33 @@ unbounded_int unbounded_int_difference(unbounded_int a, unbounded_int b) {
 }
 
 // Prend deux unbounded_int et renvoie leur produit
-unbounded_int unbounded_int_produit( unbounded_int a, unbounded_int b) {
-    return;
+unbounded_int unbounded_int_produit(unbounded_int a, unbounded_int b) {
+    if (a.signe == '*' || b.signe == '*') exit(5);
+
+    char signe = '+';
+    if ((a.signe == '+' && b.signe == '-') || (a.signe == '-' && b.signe == '+')) signe = '-';
+
+    unbounded_int res = {.len = 0, .signe = signe, .premier = NULL, .dernier = NULL};
+    for (int i = 0; i < a.len + b.len - 1; i++) ajouteDernier(res, '0');
+
+    chiffre *tmpA = a.dernier;
+    chiffre *tmpB = b.dernier;
+    chiffre *tmpRes = res.dernier;
+    for (int i = 0; i < b.len; i++) {
+        int r = 0;
+        if (tmpB->c == '0') continue;
+
+        while (tmpA != NULL) {
+            int v = tmpRes->c + tmpA->c * tmpB->c + r - '0';
+            tmpRes->c = '0' + v % 10;
+            r = v / 10;
+            tmpA = tmpA->suivant;
+        }
+
+        tmpRes = res.dernier;
+        for (int j = 0; j < i; i++) tmpRes = tmpRes->precedent;
+        tmpB = tmpB->suivant;
+    }
+
+    return res;
 }
