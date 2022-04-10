@@ -1,7 +1,8 @@
 #include "unbounded_int.h"
 
 // Prend un int et renvoie l'adresse d'une chaine de caractères correspondante
-static char *convertIntToString(long long i){
+// Si le nombre est négatif, le signe '-' n'apparaîtra pas dans la chaîne de caractères
+static char *int2string(long long i){
     int n = i;
     int acc = 0;
     while(n != 0) {
@@ -13,17 +14,17 @@ static char *convertIntToString(long long i){
     if(numbers == NULL){
         abort();
     }
-    for(int j = 0; j < acc; j++){
+    for(int j = acc - 1; j > -1; j--){
         numbers[j] = n % 10 + '0';
         n /= 10;
     }
     return numbers;
 }
 
-static void ajouteDernier(unbounded_int i, char e) {
+static unbounded_int ajoute_dernier(unbounded_int i, char e) {
     chiffre *ajout = malloc(sizeof(chiffre));
     if (ajout == NULL) {
-        perror("ajouteDernier : malloc a échoué");
+        perror("ajoute_dernier : malloc a échoué");
         exit(1);
     }
     ajout->c = e;
@@ -35,11 +36,74 @@ static void ajouteDernier(unbounded_int i, char e) {
     } else {
         ajout->precedent = i.dernier;
         i.dernier->suivant = ajout;
-        i.dernier = ajout;
     }
 
     i.dernier = ajout;
     i.len++;
+    return i;
+}
+
+static unbounded_int ajoute_premier(unbounded_int i, char e) {
+    chiffre *ajout = malloc(sizeof(chiffre));
+    if (ajout == NULL) {
+        perror("ajoute_premier : malloc a échoué");
+        exit(1);
+    }
+    ajout->c = e;
+    ajout->precedent = NULL;
+    
+    if (i.premier == NULL) {
+        ajout->suivant = NULL;
+        i.dernier = ajout;
+    } else {
+        ajout->suivant = i.premier;
+        i.premier->precedent = ajout;
+    }
+
+    i.premier = ajout;
+    i.len++;
+    return i;
+}
+
+static unbounded_int supprime_premier(unbounded_int i) {
+    if (i.premier == NULL) return i;
+    unbounded_int res = {.signe = i.signe, .len = 0, .premier = NULL, .dernier = NULL};
+    chiffre *tmp = i.premier->suivant;
+    while (tmp != NULL) {
+        res = ajoute_dernier(res, tmp->c);
+        tmp = tmp->suivant;
+    }
+    return res;
+}
+
+static unbounded_int unbounded_int_abs(unbounded_int i) {
+    unbounded_int res = {.len = i.len, .signe = '+', .premier = NULL, .dernier = NULL};
+    chiffre *tmp = i.premier;
+    while (tmp != NULL) {
+        res = ajoute_dernier(res, tmp->c);
+        tmp = tmp->suivant;
+    }
+    return res;
+}
+
+static unbounded_int unbounded_int_oppose(unbounded_int i) {
+    char signe = '+';
+    if (i.signe == '+') signe = '-';
+    unbounded_int res = {.len = i.len, .signe = signe, .premier = NULL, .dernier = NULL};
+    chiffre *tmp = i.premier;
+    while (tmp != NULL) {
+        res = ajoute_dernier(res, tmp->c);
+        tmp = tmp->suivant;
+    }
+    return res;
+}
+
+static unbounded_int supprime_zero_inutile(unbounded_int i) {
+    unbounded_int res = {.len = i.len, .signe = i.signe, .premier = i.premier, .dernier = i.dernier};
+    while(res.premier->c == '0') {
+        res = supprime_premier(res);
+    }
+    return res;
 }
 
 // Prend l'adresse d'une chaîne de caractères et renvoie le
@@ -47,35 +111,24 @@ static void ajouteDernier(unbounded_int i, char e) {
 unbounded_int string2unbounded_int(const char *e) {
     int j = 0;
     char signe = '*';
-    if(*e == '-') {
+    if (*e == '-') {
         signe = '-';
+        j = 1;
+    } else if (*e == '+') {
+        signe = '+';
         j = 1;
     } else signe = '+';
     unbounded_int res = {.signe = signe, .len = 0, .premier = NULL, .dernier = NULL};
-    chiffre *tmpChiffre = NULL;
 
-    for(int i = j; i < sizeof(*e); i++){ // IL NE RENTRE PAS DANS MON FOR WTF
-        chiffre *tmp = malloc(sizeof(chiffre));
-         if (tmp == NULL) {
-            perror("string2unbounded_int, tmp : malloc a échoué");
-            exit(1);
-        }
-        tmp->c = e[i];
-        tmp->precedent = tmpChiffre;
-        tmp->suivant = NULL;
-        tmpChiffre = tmp;
-        res.len += 1;
-        if(i == j) {
-            res.premier = tmpChiffre;
-        }
+    for(int i = j; i < strlen(e); i++) {
+        res = ajoute_dernier(res, e[i]);
     }
-    res.dernier = tmpChiffre;
     return res;
 }
 
 // Prend un nombre et renvoie le unbounded_int correspondant
 unbounded_int ll2unbounded_int(long long i) {
-    char *numbers = convertIntToString(i);
+    char *numbers = int2string(i);
     unbounded_int res = string2unbounded_int(numbers);
     res.signe = (i < 0) ? '-' : '+';
     return res;
@@ -122,16 +175,16 @@ char *unbounded_int2string(unbounded_int i) {
 // renvoie -1 si a < b, 0 si a == b et 1 si a > b
 int unbounded_int_cmp_unbounded_int(unbounded_int a, unbounded_int b) {
     if (a.signe == '*' || b.signe == '*') return -2;
-    if((a.signe == '-' && b.signe == '+') || (a.len < b.len && !(a.signe == '+' && b.signe == '-')) || (a.len > b.len && (a.signe == '-' && b.signe == '-'))) return -1;
+    if((a.signe == '-' && b.signe == '+') || (a.len > b.len && (a.signe == '-' && b.signe == '-')) || a.len < b.len) return -1;
     if((a.signe == '+' && b.signe == '-') || (a.len < b.len && (a.signe == '-' && b.signe == '-')) || a.len > b.len) return 1;
 
     chiffre *tmpA = a.premier;
     chiffre *tmpB = b.premier;
     while (tmpA != NULL) {
-        if(a.signe == '-' && tmpA->c - '0' < tmpB->c - '0') return 1;
-        if(a.signe == '-' && tmpA->c - '0' > tmpB->c - '0') return -1;
-        if(tmpA->c - '0' < tmpB->c - '0') return -1;
-        if(tmpA->c - '0' > tmpB->c - '0') return 1;
+        if(a.signe == '-' && tmpA->c < tmpB->c) return 1;
+        if(a.signe == '-' && tmpA->c > tmpB->c) return -1;
+        if(tmpA->c < tmpB->c) return -1;
+        if(tmpA->c > tmpB->c) return 1;
         tmpA = tmpA->suivant;
         tmpB = tmpB->suivant;
     }
@@ -143,12 +196,14 @@ int unbounded_int_cmp_unbounded_int(unbounded_int a, unbounded_int b) {
 int unbounded_int_cmp_ll(unbounded_int a, long long b) {
     if (a.signe == '*') return -2;
 
-    char *c = convertIntToString(b);
-    if ((a.signe == '-' && b > 0) || a.len < strlen(c)) return -1;
-    if ((a.signe == '+' && b < 0) || a.len > strlen(c)) return 1;
+    char *c = int2string(b);
+    if ((a.signe == '-' && b > 0) || (a.len > strlen(c) && (a.signe == '-' && b < 0)) || a.len < strlen(c)) return -1;
+    if ((a.signe == '+' && b < 0) || (a.len < strlen(c) && (a.signe == '-' && b < 0)) || a.len > strlen(c)) return 1;
 
     chiffre *tmp = a.premier;
     for (int i = 0; i < strlen(c); i++) {
+        if (a.signe == '-' && tmp->c < c[i]) return 1;
+        if (a.signe == '-' && tmp->c > c[i]) return -1;
         if (tmp->c < c[i]) return -1;
         if (tmp->c > c[i]) return 1;
         tmp = tmp->suivant;
@@ -161,71 +216,34 @@ unbounded_int unbounded_int_somme(unbounded_int a, unbounded_int b) {
     if(a.signe == '*' || b.signe == '*') exit(5);
     if(a.signe == '-' && b.signe == '+') return unbounded_int_difference(b, a);
     if(a.signe == '+' && b.signe == '-') return unbounded_int_difference(a, b);
-    char signe = '*';
-    if(a.signe == '+' && b.signe == '+') {
-        signe = '+';
-    } else signe = '-';
+    char signe = '-';
+    if(a.signe == '+' && b.signe == '+') signe = '+';
     unbounded_int res = {.len = 0, .signe = signe, .dernier = NULL, .premier = NULL};
-    int remainder = 0;
+    int reste = 0;
     chiffre *tmpA = a.dernier;
     chiffre *tmpB = b.dernier;
-    chiffre *tmpRes = NULL;
-    int i = 0;
     while(tmpA != NULL || tmpB != NULL) {
-        chiffre *tmpSomme = malloc(sizeof(chiffre));
-        if (tmpSomme == NULL) {
-            perror("unbounded_int_somme : malloc a échoué");
-            exit(1);
-        }
-        if(tmpSomme == NULL) {
-            res.signe = '*';
-        }
         int chiffreA, chiffreB;
-        if(tmpA != NULL) {
-            chiffreA = tmpA->c;
-        } else chiffreA = 0;
-        if(tmpB != NULL) {
-            chiffreB = tmpB->c;
-        } else chiffreB = 0;
-        int somme = chiffreA + chiffreB + remainder;
-        if((tmpA->precedent == NULL && tmpB == NULL) || (tmpB->precedent == NULL && tmpA == NULL)) {
-            tmpSomme->c = somme % 10 + '0';
-            tmpSomme->suivant = tmpRes;
-            tmpRes->precedent = tmpSomme;
-            tmpRes = tmpSomme;
-            tmpSomme->c = '1';
-            tmpSomme->suivant = tmpRes;
-            tmpRes->precedent = tmpSomme;
-            tmpRes = tmpSomme;
-            break;
-        }
-        if(somme >= 10){
-            tmpSomme->c = '0';
-            remainder = somme % 10;
-        } else {
-            tmpSomme->c = somme + '0';
-        }
-        tmpRes->precedent = tmpSomme;
-        tmpSomme->suivant = tmpRes;
-        tmpRes = tmpSomme;
-        res.len += 1;
-        if(tmpA != NULL) tmpA = tmpA->precedent;
-        if(tmpB != NULL) tmpB = tmpB->precedent;
-        if(i == 0) {
-            res.dernier = tmpSomme;
-        }
-        i++;
+        if(tmpA != NULL) chiffreA = tmpA->c - '0';
+        else chiffreA = 0;
+        if(tmpB != NULL) chiffreB = tmpB->c - '0';
+        else chiffreB = 0;
+        int somme = chiffreA + chiffreB + reste;
+        res = ajoute_premier(res, somme % 10 + '0');
+        reste = somme / 10;
+        tmpA = tmpA->precedent;
+        tmpB = tmpB->precedent;
     }
-    res.premier = tmpRes;
+    if(reste != 0) res = ajoute_premier(res, reste + '0');
     return res;
 }
 
 // Prend deux unbounded_int et renvoie leur différence
 unbounded_int unbounded_int_difference(unbounded_int a, unbounded_int b) {
     if (a.signe == '*' || b.signe == '*') exit(5);
-    if ((a.signe == '+' && b.signe == '-') || (a.signe == '-' && b.signe == '+')) return unbounded_int_somme(a, b);
+    if ((a.signe == '+' && b.signe == '-') || (a.signe == '-' && b.signe == '+')) return unbounded_int_somme(a, unbounded_int_oppose(b));
 
-    int compare = unbounded_int_cmp_unbounded_int(a, b);
+    int compare = unbounded_int_cmp_unbounded_int(unbounded_int_abs(a), unbounded_int_abs(b));
     chiffre *tmpA, *tmpB;
     if (compare == 1) {
         tmpA = a.dernier;
@@ -240,47 +258,28 @@ unbounded_int unbounded_int_difference(unbounded_int a, unbounded_int b) {
     char signe = '+';
     if ((a.signe == '+' && compare == -1) || (a.signe == '-' && compare == 1)) signe = '-';
 
-    chiffre *tmpRes = NULL;
-    unbounded_int res = {.len = 0, .signe = signe, .dernier = tmpRes, .premier = NULL};
-    int dernierEstDetermine = 0;
+    unbounded_int res = {.len = 0, .signe = signe, .dernier = NULL, .premier = NULL};
     int reste = 0;
 
     while (tmpA != NULL) {
-        chiffre *difference = malloc(sizeof(chiffre));
-        if (difference == NULL) {
-            perror("unbounded_int_difference : malloc a échoué");
-            exit(1);
-        }
         if (tmpB == NULL) {
-            difference->c = tmpA->c;
+            res = ajoute_premier(res, tmpA->c);
         } else {
             int chiffreA = tmpA->c - '0';
             int chiffreB = tmpB->c - '0';
             if (chiffreA >= chiffreB + reste) {
-                difference->c = '0' + chiffreA - chiffreB - reste;
+                res = ajoute_premier(res, '0' + chiffreA - chiffreB - reste);
                 reste = 0;
             } else {
-                difference->c = '0' + chiffreA + 10 - chiffreB - reste;
+                res = ajoute_premier(res, '0' + chiffreA + 10 - chiffreB - reste);
                 reste = 1;
             }
         }
 
-        difference->precedent = NULL;
-        difference->suivant = tmpRes;
-        tmpRes->precedent = difference;
-        res.len++;
-
-        if (dernierEstDetermine == 0) {
-            res.dernier = difference;
-            dernierEstDetermine = 1;
-        }
-
         tmpA = tmpA->precedent;
         tmpB = tmpB->precedent;
-        tmpRes = tmpRes->precedent;
     }
-
-    res.premier = tmpRes;
+    res = supprime_zero_inutile(res);
     return res;
 }
 
@@ -292,27 +291,29 @@ unbounded_int unbounded_int_produit(unbounded_int a, unbounded_int b) {
     if ((a.signe == '+' && b.signe == '-') || (a.signe == '-' && b.signe == '+')) signe = '-';
 
     unbounded_int res = {.len = 0, .signe = signe, .premier = NULL, .dernier = NULL};
-    for (int i = 0; i < a.len + b.len - 1; i++) ajouteDernier(res, '0');
+    for (int i = 0; i < a.len + b.len - 1; i++) res = ajoute_dernier(res, '0');
 
-    chiffre *tmpA = a.dernier;
     chiffre *tmpB = b.dernier;
     chiffre *tmpRes;
     for (int i = 0; i < b.len; i++) {
         tmpRes = res.dernier;
-        for (int j = 0; j < i; i++) tmpRes = tmpRes->precedent;
+        for (int j = 0; j < i; j++) tmpRes = tmpRes->precedent;
 
         int r = 0;
         if (tmpB->c == '0') continue;
 
+        chiffre *tmpA = a.dernier;
         while (tmpA != NULL) {
-            int v = tmpRes->c + tmpA->c * tmpB->c + r - '0';
+            int v = (tmpRes->c - '0') + (tmpA->c - '0') * (tmpB->c - '0') + r;
             tmpRes->c = '0' + v % 10;
             r = v / 10;
-            tmpA = tmpA->suivant;
+            tmpA = tmpA->precedent;
+            tmpRes = tmpRes->precedent;
         }
 
-        tmpB = tmpB->suivant;
+        if (i == 0) res.dernier = tmpRes;
+        tmpB = tmpB->precedent;
     }
-
+    res.premier = tmpRes;
     return res;
 }
