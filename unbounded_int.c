@@ -294,8 +294,9 @@ unbounded_int unbounded_int_produit(unbounded_int a, unbounded_int b) {
     for (int i = 0; i < a.len + b.len - 1; i++) res = ajoute_premier(res, '0');
 
     chiffre *tmpB = b.dernier;
-    chiffre *tmpRes = res.dernier;
+    chiffre *tmpRes;
     for (int i = 0; i < b.len; i++) {
+        tmpRes = res.dernier;
         for (int j = 0; j < i; j++) tmpRes = tmpRes->precedent;
 
         int r = 0;
@@ -309,9 +310,6 @@ unbounded_int unbounded_int_produit(unbounded_int a, unbounded_int b) {
             tmpA = tmpA->precedent;
             tmpRes = tmpRes->precedent;
         }
-
-        tmpRes = res.dernier;
-        if (i == 0) res.dernier = tmpRes;
         tmpB = tmpB->precedent;
     }
     return res;
