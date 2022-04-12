@@ -291,7 +291,7 @@ unbounded_int unbounded_int_produit(unbounded_int a, unbounded_int b) {
     if ((a.signe == '+' && b.signe == '-') || (a.signe == '-' && b.signe == '+')) signe = '-';
 
     unbounded_int res = {.len = 0, .signe = signe, .premier = NULL, .dernier = NULL};
-    for (int i = 0; i < a.len + b.len - 1; i++) res = ajoute_dernier(res, '0');
+    for (int i = 0; i < a.len + b.len - 1; i++) res = ajoute_premier(res, '0');
 
     chiffre *tmpB = b.dernier;
     chiffre *tmpRes = res.dernier;

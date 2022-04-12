@@ -6,4 +6,9 @@ test_unbounded.o : test_unbounded.c unbounded_int.h
 
 unbounded_int.o : unbounded_int.c unbounded_int.h
 	gcc -g -Wall -c -o unbounded_int.o unbounded_int.c
-	
+
+execute :
+	./programme
+
+clear :	
+	rm -f *.o programme
