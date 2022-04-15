@@ -1,18 +1,14 @@
 #include "unbounded_int.h"
 
-// Prend un int et renvoie l'adresse d'une chaine de caractères correspondante
-// Si le nombre est négatif, le signe '-' n'apparaîtra pas dans la chaîne de caractères
-static char *int2string(long long i){
-    int n = i;
-    int acc = 0;
-    while(n != 0) {
-        acc++;
-        n = n/10;
-    }
-    n = abs(i);
+// Prend un entier et renvoie l'adresse de la chaîne de caractères correspondante.
+// La chaîne de caractères ne contient pas le signe de l'entier.
+static char *int2string(long long i) {
+    int acc = log10(abs(i)) + 1;
+    int n = abs(i);
     char *numbers = calloc(acc, sizeof(char));
     if(numbers == NULL){
-        abort();
+        perror("int2string : calloc a échoué");
+        exit(1);
     }
     for(int j = acc - 1; j > -1; j--){
         numbers[j] = n % 10 + '0';
@@ -21,6 +17,8 @@ static char *int2string(long long i){
     return numbers;
 }
 
+// Prend un unbounded_int et un caractère et ajoute ce caractère en dernière position
+// l'unbounded_int
 static unbounded_int ajoute_dernier(unbounded_int i, char e) {
     chiffre *ajout = malloc(sizeof(chiffre));
     if (ajout == NULL) {
@@ -43,6 +41,8 @@ static unbounded_int ajoute_dernier(unbounded_int i, char e) {
     return i;
 }
 
+// Prend un unbounded_int et un caractère et ajoute ce caractère en première position
+// de l'unbounded_int
 static unbounded_int ajoute_premier(unbounded_int i, char e) {
     chiffre *ajout = malloc(sizeof(chiffre));
     if (ajout == NULL) {
@@ -65,6 +65,7 @@ static unbounded_int ajoute_premier(unbounded_int i, char e) {
     return i;
 }
 
+// Prend un unbounded_int et supprime son premier chiffre
 static unbounded_int supprime_premier(unbounded_int i) {
     if (i.premier == NULL) return i;
     unbounded_int res = {.signe = i.signe, .len = 0, .premier = NULL, .dernier = NULL};
@@ -76,6 +77,7 @@ static unbounded_int supprime_premier(unbounded_int i) {
     return res;
 }
 
+// Prend un unbounded_int et renvoie sa valeur absolue
 static unbounded_int unbounded_int_abs(unbounded_int i) {
     unbounded_int res = {.len = i.len, .signe = '+', .premier = NULL, .dernier = NULL};
     chiffre *tmp = i.premier;
@@ -86,6 +88,7 @@ static unbounded_int unbounded_int_abs(unbounded_int i) {
     return res;
 }
 
+// Prend un unbounded_int et renvoie son opposé
 static unbounded_int unbounded_int_oppose(unbounded_int i) {
     char signe = '+';
     if (i.signe == '+') signe = '-';
@@ -98,6 +101,7 @@ static unbounded_int unbounded_int_oppose(unbounded_int i) {
     return res;
 }
 
+// Prend un unbounded_int et supprime tous les zéro inutiles
 static unbounded_int supprime_zero_inutile(unbounded_int i) {
     unbounded_int res = {.len = i.len, .signe = i.signe, .premier = i.premier, .dernier = i.dernier};
     while(res.premier->c == '0') {
@@ -106,8 +110,7 @@ static unbounded_int supprime_zero_inutile(unbounded_int i) {
     return res;
 }
 
-// Prend l'adresse d'une chaîne de caractères et renvoie le
-// unbounded_int correspondant
+// Prend une chaîne de caractères et renvoie l'unbounded_int correspondant
 unbounded_int string2unbounded_int(const char *e) {
     int j = 0;
     char signe = '*';
@@ -126,7 +129,7 @@ unbounded_int string2unbounded_int(const char *e) {
     return res;
 }
 
-// Prend un nombre et renvoie le unbounded_int correspondant
+// Prend un nombre et renvoie l'unbounded_int correspondant
 unbounded_int ll2unbounded_int(long long i) {
     char *numbers = int2string(i);
     unbounded_int res = string2unbounded_int(numbers);
@@ -134,8 +137,7 @@ unbounded_int ll2unbounded_int(long long i) {
     return res;
 }    
 
-// Prend en argument un unbounded_int et renvoie la chaîne de
-// caractères correspondant
+// Prend un unbounded_int et renvoie la chaîne de caractères correspondante
 char *unbounded_int2string(unbounded_int i) {
     if (i.premier == NULL) {
         char *res = calloc(2, sizeof(char));
@@ -171,8 +173,8 @@ char *unbounded_int2string(unbounded_int i) {
     return res;
 }
 
-// Prend deux unbounded_int et les compares
-// renvoie -1 si a < b, 0 si a == b et 1 si a > b
+// Prend deux unbounded_int et les compare.
+// Renvoie -1 si a < b, 0 si a == b et 1 si a > b
 int unbounded_int_cmp_unbounded_int(unbounded_int a, unbounded_int b) {
     if (a.signe == '*' || b.signe == '*') return -2;
     if((a.signe == '-' && b.signe == '+') || (a.len > b.len && (a.signe == '-' && b.signe == '-')) || a.len < b.len) return -1;
@@ -191,8 +193,8 @@ int unbounded_int_cmp_unbounded_int(unbounded_int a, unbounded_int b) {
     return 0;
 }
 
-// Prend un unbounded_int et un entier et les compares
-// renvoie -1 si a < b, 0 si a == b et 1 si a > b
+// Prend un unbounded_int et un entier et les compare.
+// Renvoie -1 si a < b, 0 si a == b et 1 si a > b
 int unbounded_int_cmp_ll(unbounded_int a, long long b) {
     if (a.signe == '*') return -2;
 
@@ -294,11 +296,9 @@ unbounded_int unbounded_int_produit(unbounded_int a, unbounded_int b) {
     for (int i = 0; i < a.len + b.len - 1; i++) res = ajoute_premier(res, '0');
 
     chiffre *tmpB = b.dernier;
-    chiffre *tmpRes;
+    chiffre *tmpDernier = res.dernier;
+    chiffre *tmpRes = tmpDernier;
     for (int i = 0; i < b.len; i++) {
-        tmpRes = res.dernier;
-        for (int j = 0; j < i; j++) tmpRes = tmpRes->precedent;
-
         int r = 0;
         if (tmpB->c == '0') continue;
 
@@ -310,7 +310,10 @@ unbounded_int unbounded_int_produit(unbounded_int a, unbounded_int b) {
             tmpA = tmpA->precedent;
             tmpRes = tmpRes->precedent;
         }
+
         tmpB = tmpB->precedent;
+        tmpDernier = tmpDernier->precedent;
+        tmpRes = tmpDernier;
     }
     return res;
 }

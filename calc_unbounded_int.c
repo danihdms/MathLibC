@@ -1,4 +1,3 @@
-/* Contient le code de l'interpréteur */
 #include <stdio.h>
 #include "unbounded_int.h"
 
