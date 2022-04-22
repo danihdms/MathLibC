@@ -233,8 +233,16 @@ unbounded_int unbounded_int_somme(unbounded_int a, unbounded_int b) {
         int somme = chiffreA + chiffreB + reste;
         res = ajoute_premier(res, somme % 10 + '0');
         reste = somme / 10;
-        tmpA = tmpA->precedent;
-        tmpB = tmpB->precedent;
+        if(tmpA != NULL) {
+            tmpA = tmpA->precedent;
+        } else {
+            tmpA = NULL;
+        }
+        if(tmpB != NULL) {
+            tmpB = tmpB->precedent;
+        } else {
+            tmpB = NULL;
+        }
     }
     if(reste != 0) res = ajoute_premier(res, reste + '0');
     return res;
@@ -264,22 +272,32 @@ unbounded_int unbounded_int_difference(unbounded_int a, unbounded_int b) {
     int reste = 0;
 
     while (tmpA != NULL) {
+        int chiffreA = tmpA->c - '0';
         if (tmpB == NULL) {
-            res = ajoute_premier(res, tmpA->c);
-        } else {
-            int chiffreA = tmpA->c - '0';
-            int chiffreB = tmpB->c - '0';
-            if (chiffreA >= chiffreB + reste) {
-                res = ajoute_premier(res, '0' + chiffreA - chiffreB - reste);
+            if (chiffreA >= reste) {
+                res = ajoute_premier(res, '0' + (chiffreA - reste));
                 reste = 0;
             } else {
-                res = ajoute_premier(res, '0' + chiffreA + 10 - chiffreB - reste);
+                res = ajoute_premier(res, '0' + (chiffreA + 10 - reste));
+                reste = 1;
+            }
+        } else {
+            int chiffreB = tmpB->c - '0';
+            if (chiffreA >= chiffreB + reste) {
+                res = ajoute_premier(res, '0' + (chiffreA - chiffreB - reste));
+                reste = 0;
+            } else {
+                res = ajoute_premier(res, '0' + (chiffreA + 10 - chiffreB - reste));
                 reste = 1;
             }
         }
 
         tmpA = tmpA->precedent;
-        tmpB = tmpB->precedent;
+        if(tmpB != NULL) {
+            tmpB = tmpB->precedent;
+        } else {
+            tmpB = NULL;
+        }
     }
     res = supprime_zero_inutile(res);
     return res;
@@ -316,4 +334,29 @@ unbounded_int unbounded_int_produit(unbounded_int a, unbounded_int b) {
         tmpRes = tmpDernier;
     }
     return res;
+}
+
+// Prend deux unbounded_int et renvoie leur produit
+unbounded_int unbounded_int_division(unbounded_int a, unbounded_int b) {
+    if(unbounded_int_cmp_unbounded_int(a, b) == - 1) return a;
+    if(unbounded_int_cmp_unbounded_int(a, b) == 0) return ll2unbounded_int(1);
+
+    unbounded_int precedent = a;
+    unbounded_int suivant = a; 
+    long long nbMultiplications = 0;
+
+    while(suivant.signe == '+') {
+        // printf("%s\n", unbounded_int2string(suivant));
+        precedent = suivant;
+        suivant = unbounded_int_difference(suivant, unbounded_int_produit(b, ll2unbounded_int(10)));
+        nbMultiplications += 10;
+    }
+    while(suivant.signe == '+') {
+        // printf("%s\n", unbounded_int2string(suivant));
+        suivant = unbounded_int_difference(suivant, b);
+        nbMultiplications += 1;
+    }
+    nbMultiplications -= 1;
+    if(nbMultiplications == 0 && unbounded_int_cmp_unbounded_int(a, b) == 1) return ll2unbounded_int(1);
+    return ll2unbounded_int(nbMultiplications);
 }
