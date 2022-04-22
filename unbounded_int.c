@@ -41,6 +41,28 @@ static unbounded_int ajoute_dernier(unbounded_int i, char e) {
     return i;
 }
 
+// Prend un unbounded_int et supprime son premier chiffre
+static unbounded_int supprime_premier(unbounded_int i) {
+    if (i.premier == NULL) return i;
+    unbounded_int res = {.signe = i.signe, .len = 0, .premier = NULL, .dernier = NULL};
+    chiffre *tmp = i.premier->suivant;
+    while (tmp != NULL) {
+        res = ajoute_dernier(res, tmp->c);
+        tmp = tmp->suivant;
+    }
+    return res;
+}
+
+// Prend un unbounded_int et supprime tous les zéro inutiles
+static unbounded_int supprime_zero_inutile(unbounded_int i) {
+    unbounded_int res = {.len = i.len, .signe = i.signe, .premier = i.premier, .dernier = i.dernier};
+    if(i.premier == NULL) return res;
+    while(res.premier->c == '0') {
+        res = supprime_premier(res);
+    }
+    return res;
+}
+
 // Prend un unbounded_int et un caractère et ajoute ce caractère en première position
 // de l'unbounded_int
 static unbounded_int ajoute_premier(unbounded_int i, char e) {
@@ -65,11 +87,10 @@ static unbounded_int ajoute_premier(unbounded_int i, char e) {
     return i;
 }
 
-// Prend un unbounded_int et supprime son premier chiffre
-static unbounded_int supprime_premier(unbounded_int i) {
-    if (i.premier == NULL) return i;
-    unbounded_int res = {.signe = i.signe, .len = 0, .premier = NULL, .dernier = NULL};
-    chiffre *tmp = i.premier->suivant;
+// Prend un unbounded_int et renvoie sa valeur absolue
+static unbounded_int unbounded_int_abs(unbounded_int i) {
+    unbounded_int res = {.len = i.len, .signe = '+', .premier = NULL, .dernier = NULL};
+    chiffre *tmp = i.premier;
     while (tmp != NULL) {
         res = ajoute_dernier(res, tmp->c);
         tmp = tmp->suivant;
@@ -77,9 +98,9 @@ static unbounded_int supprime_premier(unbounded_int i) {
     return res;
 }
 
-// Prend un unbounded_int et renvoie sa valeur absolue
-static unbounded_int unbounded_int_abs(unbounded_int i) {
-    unbounded_int res = {.len = i.len, .signe = '+', .premier = NULL, .dernier = NULL};
+// Copie un unbounded int
+static unbounded_int unbounded_int_copie(unbounded_int i) {
+    unbounded_int res = {.len = i.len, .signe = i.signe, .premier = NULL, .dernier = NULL};
     chiffre *tmp = i.premier;
     while (tmp != NULL) {
         res = ajoute_dernier(res, tmp->c);
@@ -101,14 +122,6 @@ static unbounded_int unbounded_int_oppose(unbounded_int i) {
     return res;
 }
 
-// Prend un unbounded_int et supprime tous les zéro inutiles
-static unbounded_int supprime_zero_inutile(unbounded_int i) {
-    unbounded_int res = {.len = i.len, .signe = i.signe, .premier = i.premier, .dernier = i.dernier};
-    while(res.premier->c == '0') {
-        res = supprime_premier(res);
-    }
-    return res;
-}
 
 // Prend une chaîne de caractères et renvoie l'unbounded_int correspondant
 unbounded_int string2unbounded_int(const char *e) {
@@ -215,6 +228,8 @@ int unbounded_int_cmp_ll(unbounded_int a, long long b) {
 
 // Prend deux unbounded_int et renvoie leur somme
 unbounded_int unbounded_int_somme(unbounded_int a, unbounded_int b) {
+    a = supprime_zero_inutile(a);
+    b = supprime_zero_inutile(b);
     if(a.signe == '*' || b.signe == '*') exit(5);
     if(a.signe == '-' && b.signe == '+') return unbounded_int_difference(b, a);
     if(a.signe == '+' && b.signe == '-') return unbounded_int_difference(a, b);
@@ -250,6 +265,8 @@ unbounded_int unbounded_int_somme(unbounded_int a, unbounded_int b) {
 
 // Prend deux unbounded_int et renvoie leur différence
 unbounded_int unbounded_int_difference(unbounded_int a, unbounded_int b) {
+    a = supprime_zero_inutile(a);
+    b = supprime_zero_inutile(b);
     if (a.signe == '*' || b.signe == '*') exit(5);
     if ((a.signe == '+' && b.signe == '-') || (a.signe == '-' && b.signe == '+')) return unbounded_int_somme(a, unbounded_int_oppose(b));
 
@@ -306,6 +323,8 @@ unbounded_int unbounded_int_difference(unbounded_int a, unbounded_int b) {
 // Prend deux unbounded_int et renvoie leur produit
 unbounded_int unbounded_int_produit(unbounded_int a, unbounded_int b) {
     if (a.signe == '*' || b.signe == '*') exit(5);
+    a = supprime_zero_inutile(a);
+    b = supprime_zero_inutile(b);
 
     char signe = '+';
     if ((a.signe == '+' && b.signe == '-') || (a.signe == '-' && b.signe == '+')) signe = '-';
@@ -338,25 +357,41 @@ unbounded_int unbounded_int_produit(unbounded_int a, unbounded_int b) {
 
 // Prend deux unbounded_int et renvoie leur produit
 unbounded_int unbounded_int_division(unbounded_int a, unbounded_int b) {
+    a = supprime_zero_inutile(a);
+    b = supprime_zero_inutile(b);
     if(unbounded_int_cmp_unbounded_int(a, b) == - 1) return a;
     if(unbounded_int_cmp_unbounded_int(a, b) == 0) return ll2unbounded_int(1);
 
-    unbounded_int precedent = a;
-    unbounded_int suivant = a; 
-    long long nbMultiplications = 0;
+    unbounded_int res = {.len = 0, .premier = NULL, .dernier = NULL, .signe = '+'};
 
-    while(suivant.signe == '+') {
-        // printf("%s\n", unbounded_int2string(suivant));
-        precedent = suivant;
-        suivant = unbounded_int_difference(suivant, unbounded_int_produit(b, ll2unbounded_int(10)));
-        nbMultiplications += 10;
+    unbounded_int partieDividende = {.len = 0, .premier = NULL, .dernier = NULL, .signe = '+'};
+    chiffre *acc = a.premier;
+    while(acc != NULL) {
+        while(partieDividende.len < b.len && acc != NULL) {
+            partieDividende = ajoute_dernier(partieDividende, acc->c);
+            acc = acc->suivant;
+        }
+        if(unbounded_int_cmp_unbounded_int(partieDividende, b) == -1 && acc != NULL){
+            partieDividende = ajoute_dernier(partieDividende, acc->c);
+            acc = acc->suivant;
+        }
+
+        unbounded_int partieSoustraite = partieDividende;
+        char nbSoustractions = '0';
+        while(unbounded_int_cmp_unbounded_int(partieSoustraite, b) == 1) {
+            unbounded_int_difference(partieSoustraite, b);
+            nbSoustractions += 1;
+        }
+
+        res = ajoute_dernier(res, nbSoustractions);
+
+        partieDividende = unbounded_int_copie(partieSoustraite);
+        while(partieDividende.len < b.len && acc != NULL) {
+            partieDividende = ajoute_dernier(partieDividende, acc->c);
+            acc = acc->suivant;
+        }
+
+        if(unbounded_int_cmp_unbounded_int(partieDividende, b) == -1) break;
     }
-    while(suivant.signe == '+') {
-        // printf("%s\n", unbounded_int2string(suivant));
-        suivant = unbounded_int_difference(suivant, b);
-        nbMultiplications += 1;
-    }
-    nbMultiplications -= 1;
-    if(nbMultiplications == 0 && unbounded_int_cmp_unbounded_int(a, b) == 1) return ll2unbounded_int(1);
-    return ll2unbounded_int(nbMultiplications);
+    return res;
 }

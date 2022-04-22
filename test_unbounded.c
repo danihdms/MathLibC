@@ -1,7 +1,7 @@
 #include "unbounded_int.h"
 
 int main(int argc, char const *argv[]) {
-    unbounded_int a = string2unbounded_int("10");
+    unbounded_int a = string2unbounded_int("50");
     unbounded_int b = ll2unbounded_int(12);
     int c = -40;
     char *texteA = unbounded_int2string(a);
@@ -13,5 +13,7 @@ int main(int argc, char const *argv[]) {
     printf("%s + %s = %s\n", texteA, texteB, unbounded_int2string(unbounded_int_somme(a, b)));
     printf("%s - %s = %s\n", texteA, texteB, unbounded_int2string(unbounded_int_difference(a, b)));
     printf("%s * %s = %s\n", texteA, texteB, unbounded_int2string(unbounded_int_produit(a, b)));
+    printf("%s / %s = %s\n", texteA, texteB, unbounded_int2string(unbounded_int_division(a, b)));
+
     return 0;
 }
