@@ -371,6 +371,11 @@ unbounded_int unbounded_int_produit(unbounded_int a, unbounded_int b) {
 unbounded_int unbounded_int_division(unbounded_int a, unbounded_int b) {
     a = supprime_zero_inutile(a);
     b = supprime_zero_inutile(b);
+    if (b.premier->c == '0') {
+        perror("La division par 0 n'existe pas.");
+        exit(1);
+    }
+    if (a.signe == '*' || b.signe == '*') exit(5);
     if (unbounded_int_cmp_unbounded_int(a, b) == -1) return ll2unbounded_int(0);
     if (unbounded_int_cmp_unbounded_int(a, b) == 0) return ll2unbounded_int(1);
 
@@ -378,6 +383,7 @@ unbounded_int unbounded_int_division(unbounded_int a, unbounded_int b) {
     if ((a.signe == '+' && b.signe == '-') || (a.signe == '-' && b.signe == '+')) signe = '-';
 
     unbounded_int res = ll2unbounded_int(0);
+    res.signe = signe;
     unbounded_int nouveau_a = {.premier = NULL, .dernier = NULL, .len = 0, .signe = '+'};
     chiffre *tmpA = a.premier;
     do {
