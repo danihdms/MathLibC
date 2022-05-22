@@ -6,7 +6,6 @@ static char *int2string(long long i) {
     if (i == 0) return "0";
     int acc = log10(abs(i)) + 1;
     int n = abs(i);
-    printf("%lld %d\n", i, acc);
     char *numbers = calloc(acc, sizeof(char));
     if(numbers == NULL){
         perror("int2string : calloc a échoué");
