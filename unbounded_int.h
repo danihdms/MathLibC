@@ -1,3 +1,6 @@
+#ifndef UNBOUNDED_INT_H
+#define UNBOUNDED_INT_H
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <math.h>
@@ -45,3 +48,5 @@ extern unbounded_int unbounded_int_produit( unbounded_int a, unbounded_int b);
 
 // Prend deux unbounded_int et rend leur quotient
 extern unbounded_int unbounded_int_division( unbounded_int a, unbounded_int b);
+
+#endif
