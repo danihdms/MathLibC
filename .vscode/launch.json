@@ -7,7 +7,7 @@
         "name": "(gdb) Launch",
         "type": "cppdbg",
         "request": "launch",
-        "program": "${workspaceFolder}/programme",
+        "program": "${workspaceFolder}/C_HAYDAMOUS_YE/programme",
         "args": [],
         "stopAtEntry": false,
         "cwd": "${fileDirname}",

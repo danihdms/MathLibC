@@ -59,7 +59,7 @@ static unbounded_int supprime_premier(unbounded_int i) {
 static unbounded_int supprime_zero_inutile(unbounded_int i) {
     unbounded_int res = {.len = i.len, .signe = i.signe, .premier = i.premier, .dernier = i.dernier};
     if(i.premier == NULL) return res;
-    while(res.len > 0 && res.premier->c == '0') {
+    while(res.len > 1 && res.premier->c == '0') {
         res = supprime_premier(res);
     }
     return res;
@@ -91,18 +91,7 @@ static unbounded_int ajoute_premier(unbounded_int i, char e) {
 
 // Prend un unbounded_int et renvoie sa valeur absolue
 static unbounded_int unbounded_int_abs(unbounded_int i) {
-    unbounded_int res = {.len = i.len, .signe = '+', .premier = NULL, .dernier = NULL};
-    chiffre *tmp = i.premier;
-    while (tmp != NULL) {
-        res = ajoute_dernier(res, tmp->c);
-        tmp = tmp->suivant;
-    }
-    return res;
-}
-
-// Copie un unbounded int
-static unbounded_int unbounded_int_copie(unbounded_int i) {
-    unbounded_int res = {.len = i.len, .signe = i.signe, .premier = NULL, .dernier = NULL};
+    unbounded_int res = {.len = 0, .signe = '+', .premier = NULL, .dernier = NULL};
     chiffre *tmp = i.premier;
     while (tmp != NULL) {
         res = ajoute_dernier(res, tmp->c);
@@ -196,6 +185,9 @@ char *unbounded_int2string(unbounded_int i) {
 // Renvoie -1 si a < b, 0 si a == b et 1 si a > b
 int unbounded_int_cmp_unbounded_int(unbounded_int a, unbounded_int b) {
     if (a.signe == '*' || b.signe == '*') return -2;
+    a = supprime_zero_inutile(a);
+    b = supprime_zero_inutile(b);
+
     if((a.signe == '-' && b.signe == '+') || (a.len > b.len && (a.signe == '-' && b.signe == '-')) || a.len < b.len) return -1;
     if((a.signe == '+' && b.signe == '-') || (a.len < b.len && (a.signe == '-' && b.signe == '-')) || a.len > b.len) return 1;
 
@@ -216,6 +208,7 @@ int unbounded_int_cmp_unbounded_int(unbounded_int a, unbounded_int b) {
 // Renvoie -1 si a < b, 0 si a == b et 1 si a > b
 int unbounded_int_cmp_ll(unbounded_int a, long long b) {
     if (a.signe == '*') return -2;
+    a = supprime_zero_inutile(a);
 
     char *c = int2string(b);
     if ((a.signe == '-' && b > 0) || (a.len > strlen(c) && (a.signe == '-' && b < 0)) || a.len < strlen(c)) return -1;
@@ -383,20 +376,24 @@ unbounded_int unbounded_int_division(unbounded_int a, unbounded_int b) {
     char signe = '+';
     if ((a.signe == '+' && b.signe == '-') || (a.signe == '-' && b.signe == '+')) signe = '-';
 
-    unbounded_int res = ll2unbounded_int(0);
-    res.signe = signe;
+    unbounded_int res = {.premier = NULL, .dernier = NULL, .len = 0, .signe = signe};
     unbounded_int nouveau_a = {.premier = NULL, .dernier = NULL, .len = 0, .signe = '+'};
+    unbounded_int abs_b = unbounded_int_abs(b);
     chiffre *tmpA = a.premier;
+
     bool premiere_soustraction = true;
     bool debut_ajout_zero = false;
+    int len_reste = 0;
     do {
         unbounded_int partie_a = {.premier = NULL, .dernier = NULL, .len = 0, .signe = '+'};
+        int i = 0;
         do {
             partie_a = ajoute_dernier(partie_a, tmpA->c);
             tmpA = tmpA->suivant;
+            if (!premiere_soustraction && i > len_reste) debut_ajout_zero = true;
             if (debut_ajout_zero == true) res = ajoute_dernier(res, '0');
-            if (!premiere_soustraction) debut_ajout_zero = true;
-        } while (unbounded_int_cmp_unbounded_int(partie_a, b) == -1);
+            i++;
+        } while (unbounded_int_cmp_unbounded_int(partie_a, abs_b) == -1);
 
         debut_ajout_zero = false;
 
@@ -404,26 +401,26 @@ unbounded_int unbounded_int_division(unbounded_int a, unbounded_int b) {
         int multiple = 0;
         int compare;
         do {
-            multiple_b = unbounded_int_somme(multiple_b, b);
+            multiple_b = unbounded_int_somme(multiple_b, abs_b);
             multiple++;
         } while((compare = unbounded_int_cmp_unbounded_int(partie_a, multiple_b)) == 1);
         if (compare != 0) {
-            multiple_b = unbounded_int_difference(multiple_b, b);
+            multiple_b = unbounded_int_difference(multiple_b, abs_b);
             multiple--;
         }
 
         unbounded_int reste = unbounded_int_difference(partie_a, multiple_b);
+        len_reste = reste.len;
         while (tmpA != NULL) {
             reste = ajoute_dernier(reste, tmpA->c);
             tmpA = tmpA->suivant;
         }
-        reste = supprime_zero_inutile(reste);
         nouveau_a = reste;
         tmpA = nouveau_a.premier;
 
-        res = ajoute_dernier(res, multiple);
+        res = ajoute_dernier(res, '0' + multiple);
         if (premiere_soustraction) premiere_soustraction = false;
-    } while (unbounded_int_cmp_unbounded_int(nouveau_a, b) > -1);
+    } while (unbounded_int_cmp_unbounded_int(nouveau_a, abs_b) > -1);
 
     return res;
 }

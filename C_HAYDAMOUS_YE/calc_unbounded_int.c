@@ -63,16 +63,6 @@ static hashmap ajoute_variable(hashmap variables, char *nom, unbounded_int valeu
     return variables;
 }
 
-// Prend une hashmap et un nom et renvoie la paire de ce nom.
-static paire *paire_de_nom(hashmap variables, char *nom) {
-    paire *tmp = variables.premier;
-    while (tmp != NULL) {
-        if (strcmp(tmp->nom, nom) == 0) return tmp;
-        tmp = tmp->suivant;
-    }
-    return NULL;
-}
-
 // Prend une hashmap et un nom et renvoie la valeur de l'élément de ce nom.
 static unbounded_int valeur_de(hashmap variables, char *nom) {
     paire *tmp = variables.premier;
@@ -227,8 +217,10 @@ static mot *get_mot_a_indice(liste_mot l, int i) {
     }
 }
 
-hashmap variables = {.premier = NULL, .dernier = NULL, .len = 0};
+// Liste stockant les variables utilisées par les fichiers
+static hashmap variables = {.premier = NULL, .dernier = NULL, .len = 0};
 
+// Traite les données en effectuant les opérations arithmétiques demandées
 static void traiteur(FILE *ecriture, liste_mot ligne) {
     if (ligne.len == 0) return;
     mot *premier = ligne.premier;
@@ -269,6 +261,7 @@ static void traiteur(FILE *ecriture, liste_mot ligne) {
     }
 }
 
+// Lit un fichier ligne par ligne, et sépare chacune de ces lignes en mots
 static void parseur(FILE *lecture, FILE *ecriture) {
     liste_mot ligne = {.premier = NULL, .dernier = NULL, .len = 0};
     liste_lettre mot = {.premier = NULL, .dernier = NULL, .len = 0};
