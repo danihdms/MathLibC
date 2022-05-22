@@ -1,4 +1,5 @@
 #include "unbounded_int.h"
+#include <stdbool.h>
 
 // Prend un entier et renvoie l'adresse de la chaîne de caractères correspondante.
 // La chaîne de caractères ne contient pas le signe de l'entier.
@@ -386,12 +387,18 @@ unbounded_int unbounded_int_division(unbounded_int a, unbounded_int b) {
     res.signe = signe;
     unbounded_int nouveau_a = {.premier = NULL, .dernier = NULL, .len = 0, .signe = '+'};
     chiffre *tmpA = a.premier;
+    bool premiere_soustraction = true;
+    bool debut_ajout_zero = false;
     do {
         unbounded_int partie_a = {.premier = NULL, .dernier = NULL, .len = 0, .signe = '+'};
         do {
             partie_a = ajoute_dernier(partie_a, tmpA->c);
             tmpA = tmpA->suivant;
+            if (debut_ajout_zero == true) res = ajoute_dernier(res, '0');
+            if (!premiere_soustraction) debut_ajout_zero = true;
         } while (unbounded_int_cmp_unbounded_int(partie_a, b) == -1);
+
+        debut_ajout_zero = false;
 
         unbounded_int multiple_b = ll2unbounded_int(0);
         int multiple = 0;
@@ -406,18 +413,16 @@ unbounded_int unbounded_int_division(unbounded_int a, unbounded_int b) {
         }
 
         unbounded_int reste = unbounded_int_difference(partie_a, multiple_b);
-        int accumulateur = 0;
         while (tmpA != NULL) {
             reste = ajoute_dernier(reste, tmpA->c);
             tmpA = tmpA->suivant;
-            accumulateur++;
         }
         reste = supprime_zero_inutile(reste);
         nouveau_a = reste;
         tmpA = nouveau_a.premier;
 
-        unbounded_int quotient = ll2unbounded_int(pow(10, accumulateur) * multiple);
-        res = unbounded_int_somme(res, quotient);
+        res = ajoute_dernier(res, multiple);
+        if (premiere_soustraction) premiere_soustraction = false;
     } while (unbounded_int_cmp_unbounded_int(nouveau_a, b) > -1);
 
     return res;
