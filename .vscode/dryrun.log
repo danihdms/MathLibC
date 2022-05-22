@@ -1,0 +1,12 @@
+make --dry-run --always-make --keep-going --print-directory
+make: Entering directory '/home/danihdms/Projects/MathLibC'
+gcc -Wall -g -pedantic -c -o test_unbounded.o test_unbounded.c
+gcc -c -Wall -g -pedantic -o unbounded_int.o unbounded_int.c
+gcc test_unbounded.o unbounded_int.o -o programme -lm
+gcc -c -Wall -g -pedantic -o calc_unbounded_int.o calc_unbounded_int.c
+gcc -c -Wall -g -pedantic -o hashmap.o hashmap.c
+gcc -c -Wall -g -pedantic -o liste_lettre.o liste_lettre.c
+gcc -c -Wall -g -pedantic -o liste_mot.o liste_mot.c
+gcc calc_unbounded_int.o unbounded_int.o hashmap.o liste_lettre.o liste_mot.o -o calc_unbounded_int -lm
+make: Leaving directory '/home/danihdms/Projects/MathLibC'
+ 
