@@ -1,18 +1,21 @@
-a = 1
-b = a * 2
+print f e
+a = 2
 print a
-print b
-
-
-a =897676764344676545687876565
 a = a * a
-a = a - 7867656443555498966543
+print a
+a = a - 78
+print a
 
-b = 98987676565
+b = 98
+print b
   b = 3 * b
+print b
 a=a - b
+print a
 
 print a
 print b
-c=  a - -565543443423
+c=  a - -56
+print c
+c = a * d
 print c

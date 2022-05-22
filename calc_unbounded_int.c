@@ -1,6 +1,4 @@
 #include "unbounded_int.h"
-#include <string.h>
-#include <ctype.h>
 #include <stdbool.h>
 
 typedef struct paire {
@@ -76,13 +74,22 @@ static paire *paire_de_nom(hashmap variables, char *nom) {
 }
 
 // Prend une hashmap et un nom et renvoie la valeur de l'élément de ce nom
-static unbounded_int *valeur_de(hashmap variables, char *nom) {
+static unbounded_int valeur_de(hashmap variables, char *nom) {
     paire *tmp = variables.premier;
     while (tmp != NULL) {
-        if (strcmp(tmp->nom, nom) == 0) return &(tmp->valeur);
+        if (strcmp(tmp->nom, nom) == 0) return tmp->valeur;
         tmp = tmp->suivant;
     }
-    return NULL;
+    unbounded_int *res = malloc(sizeof(unbounded_int));
+    if (res == NULL) {
+        perror("valeur_de : malloc a échoué");
+        exit(1);
+    }
+    res->premier = NULL;
+    res->dernier = NULL;
+    res->len = 0;
+    res->signe = '*';
+    return *res;
 }
 
 
@@ -223,15 +230,15 @@ static mot *get_mot_a_indice(liste_mot l, int i) {
 
 hashmap variables = {.premier = NULL, .dernier = NULL, .len = 0};
 
-static void traiteur(liste_mot ligne) {
+static void traiteur(FILE *ecriture, liste_mot ligne) {
     if (ligne.len == 0) return;
     mot *premier = ligne.premier;
     if (strcasecmp(premier->s, "print") == 0) {
         mot *tmp = premier->suivant;
         while (tmp != NULL) {
-            unbounded_int *valeur = valeur_de(variables, tmp->s);
-            if (valeur == NULL) printf("%s = 0\n", tmp->s);
-            else printf("%s = %s\n", tmp->s, unbounded_int2string(*valeur));
+            unbounded_int valeur = valeur_de(variables, tmp->s);
+            if (valeur.signe == '*') fprintf(ecriture, "%s = 0\n", tmp->s);
+            else fprintf(ecriture, "%s = %s\n", tmp->s, unbounded_int2string(valeur));
             tmp = tmp->suivant;
         }
     }
@@ -244,8 +251,10 @@ static void traiteur(liste_mot ligne) {
                 mot *cinquieme = get_mot_a_indice(ligne, 4);
                 unbounded_int a = string2unbounded_int(troisieme->s);
                 unbounded_int b = string2unbounded_int(cinquieme->s);
-                if (a.signe == '*') a = *valeur_de(variables, troisieme->s);
-                if (b.signe == '*') b = *valeur_de(variables, cinquieme->s);
+                if (a.signe == '*') a = valeur_de(variables, troisieme->s);
+                if (b.signe == '*') b = valeur_de(variables, cinquieme->s);
+                if (a.signe == '*') a = ll2unbounded_int(0);
+                if (b.signe == '*') b = ll2unbounded_int(0);
 
                 if (a.signe != '*' && b.signe != '*') {
                     unbounded_int res;
@@ -261,17 +270,21 @@ static void traiteur(liste_mot ligne) {
     }
 }
 
-static void parseur(FILE *fp) {
+static void parseur(FILE *lecture, FILE *ecriture) {
     liste_mot ligne = {.premier = NULL, .dernier = NULL, .len = 0};
     liste_lettre mot = {.premier = NULL, .dernier = NULL, .len = 0};
     int caractere;
-    while ((caractere = fgetc(fp)) != EOF) {
+    while ((caractere = fgetc(lecture)) != EOF) {
         if (isspace(caractere) == 0) {
-            if (caractere == '=' && mot.len > 0) {
-                char *string = liste_lettre2string(mot);
-                ligne = ajoute_mot_a_liste(ligne, string);
-                ligne = ajoute_mot_a_liste(ligne, "=");
-                mot = reinitialise_liste_lettre(mot);
+            if (caractere == '=') {
+                if (mot.len > 0) {
+                    char *string = liste_lettre2string(mot);
+                    ligne = ajoute_mot_a_liste(ligne, string);
+                    ligne = ajoute_mot_a_liste(ligne, "=");
+                    mot = reinitialise_liste_lettre(mot);
+                } else {
+                    ligne = ajoute_mot_a_liste(ligne, "=");
+                }
             } else {
                 mot = ajoute_lettre_a_liste(mot, caractere);
             }
@@ -282,64 +295,27 @@ static void parseur(FILE *fp) {
                 mot = reinitialise_liste_lettre(mot);
             }
             if (caractere == '\n') {
-                traiteur(ligne);
+                traiteur(ecriture, ligne);
                 ligne = reinitialise_liste_mot(ligne);
             }
         }
     }
-    /*
-    hashmap variables = {.premier = NULL, .dernier = NULL, .len = 0};
-    char *scan = malloc(sizeof(char));
-    while(fscanf(fp, "%s", scan) != -1) {
-        char **string = calloc(MAX, sizeof(char));
-        int i = 0;
-        // TODO : chercher un moyen d'avoir la taille exacte du string à créer
-        char *value = malloc(sizeof(char));
-        while(sscanf(scan, "%s", value) != EOF) {
-            string[i] = value;
-            i++;
-        }
-        
-        if (strcmp(string[0], "print") == 0) {
-            paire *p = paire_de_nom(variables, string[1]);
-            if (p != NULL) printf("%s = %s", p->nom, unbounded_int2string(p->valeur));
-        } else if (strcmp(string[0], "=") == 0) {
-            if (strcmp(string[0], "*") == 0 || strcmp(string[0], "+") == 0 || strcmp(string[0], "-") == 0) {
-                unbounded_int a = string2unbounded_int(string[2]);
-                unbounded_int b = string2unbounded_int(string[4]);
-                if (a.signe == '*') a = *valeur_de(variables, string[2]);
-                if (b.signe == '*') b = *valeur_de(variables, string[4]);
 
-                if (a.signe != '*' && b.signe != '*') {
-                    unbounded_int res;
-                    if (strcmp(string[0], "+") == 0) res = unbounded_int_somme(a, b);
-                    else if (strcmp(string[0], "-") == 0) res = unbounded_int_difference(a, b);
-                    else res = unbounded_int_produit(a, b);
-                    variables = ajoute_variable(variables, string[0], res);
-                }
-            } else {
-                variables = ajoute_variable(variables, string[0], string2unbounded_int(string[2]));
-            }
-        }
-        // Le tableau value doit être utilisé pour effectuer les calculs et les stocker dans variables
-
-        for(int i = 0; i < 5; i++) {
-            free(string[i]);
-        }
-        free(string);
-    }*/
+    if (mot.len > 0) {
+        char *string = liste_lettre2string(mot);
+        ligne = ajoute_mot_a_liste(ligne, string);
+        mot = reinitialise_liste_lettre(mot);
+    }
+    if (ligne.len > 0) {
+        traiteur(ecriture, ligne);
+        ligne = reinitialise_liste_mot(ligne);
+    }
 }
 
 int main(int argc, char *argv[]) {
     FILE *lecture;
     FILE *ecriture;
 
-    lecture = fopen("./texte.txt", "r");
-    if (lecture == NULL) {
-        perror("Failed to open file.");
-        exit(1);
-    }
-    /*
     if (argc > 2 && strcmp(argv[1], "-i") == 0) lecture = fopen(argv[2], "r");
     else if (argc > 4 && strcmp(argv[3], "-i") == 0) lecture = fopen(argv[4], "r");
     else lecture = stdin;
@@ -348,21 +324,12 @@ int main(int argc, char *argv[]) {
     else if (argc > 4 && strcmp(argv[3], "-o") == 0) ecriture = fopen(argv[4], "w");
     else ecriture = stdout;
 
-    if (lecture == NULL) {
+    if (lecture == NULL || ecriture == NULL) {
         perror("Failed to open file.");
         exit(1);
     }
-    */
-    parseur(lecture);
-    fclose(lecture);
-}
 
-//
-// si on trouve un séprateur (" ", "=", " + ", " - ", " * "): alors nouveau string
-    // -> on a un tableua de string avec tout ce qu'il y a dans la ligne
-// si le premier string est print, on va chercher la variable dans le tableau de
-    // variables et on l'affiche a partir du deuxième string
-    // sinon, on imprime variable non trouvée
-// si le deuxième signe est un égal
-    // si il n'y en a que trois, on cree un unbounded_int qu'on affecte a la variable
-    // sinon, si le 4ème est un opérateur, on affecte a la variable le résultat de l'opération
+    parseur(lecture, ecriture);
+    fclose(lecture);
+    fclose(ecriture);
+}

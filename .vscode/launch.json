@@ -7,7 +7,7 @@
         "name": "(gdb) Launch",
         "type": "cppdbg",
         "request": "launch",
-        "program": "${workspaceFolder}/calc_unbounded_int",
+        "program": "${workspaceFolder}/programme",
         "args": [],
         "stopAtEntry": false,
         "cwd": "${fileDirname}",

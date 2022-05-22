@@ -3,8 +3,10 @@
 // Prend un entier et renvoie l'adresse de la chaîne de caractères correspondante.
 // La chaîne de caractères ne contient pas le signe de l'entier.
 static char *int2string(long long i) {
+    if (i == 0) return "0";
     int acc = log10(abs(i)) + 1;
     int n = abs(i);
+    printf("%lld %d\n", i, acc);
     char *numbers = calloc(acc, sizeof(char));
     if(numbers == NULL){
         perror("int2string : calloc a échoué");
@@ -57,7 +59,7 @@ static unbounded_int supprime_premier(unbounded_int i) {
 static unbounded_int supprime_zero_inutile(unbounded_int i) {
     unbounded_int res = {.len = i.len, .signe = i.signe, .premier = i.premier, .dernier = i.dernier};
     if(i.premier == NULL) return res;
-    while(res.premier->c == '0') {
+    while(res.len > 0 && res.premier->c == '0') {
         res = supprime_premier(res);
     }
     return res;
@@ -137,6 +139,10 @@ unbounded_int string2unbounded_int(const char *e) {
     unbounded_int res = {.signe = signe, .len = 0, .premier = NULL, .dernier = NULL};
 
     for(int i = j; i < strlen(e); i++) {
+        if (isdigit(e[i]) == 0) {
+            res.signe = '*';
+            return res;
+        }
         res = ajoute_dernier(res, e[i]);
     }
     return res;
@@ -330,7 +336,7 @@ unbounded_int unbounded_int_produit(unbounded_int a, unbounded_int b) {
     if ((a.signe == '+' && b.signe == '-') || (a.signe == '-' && b.signe == '+')) signe = '-';
 
     unbounded_int res = {.len = 0, .signe = signe, .premier = NULL, .dernier = NULL};
-    for (int i = 0; i < a.len + b.len - 1; i++) res = ajoute_premier(res, '0');
+    for (int i = 0; i < a.len + b.len; i++) res = ajoute_premier(res, '0');
 
     chiffre *tmpB = b.dernier;
     chiffre *tmpDernier = res.dernier;
@@ -348,10 +354,12 @@ unbounded_int unbounded_int_produit(unbounded_int a, unbounded_int b) {
             tmpRes = tmpRes->precedent;
         }
 
+        if (r != 0) tmpRes->c = '0' + r;
         tmpB = tmpB->precedent;
         tmpDernier = tmpDernier->precedent;
         tmpRes = tmpDernier;
     }
+    res = supprime_zero_inutile(res);
     return res;
 }
 
@@ -393,5 +401,6 @@ unbounded_int unbounded_int_division(unbounded_int a, unbounded_int b) {
 
         if(unbounded_int_cmp_unbounded_int(partieDividende, b) == -1) break;
     }
+    res = supprime_zero_inutile(res);
     return res;
 }
