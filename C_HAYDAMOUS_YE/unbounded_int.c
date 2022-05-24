@@ -91,26 +91,15 @@ static unbounded_int ajoute_premier(unbounded_int i, char e) {
 
 // Prend un unbounded_int et renvoie sa valeur absolue
 static unbounded_int unbounded_int_abs(unbounded_int i) {
-    unbounded_int res = {.len = 0, .signe = '+', .premier = NULL, .dernier = NULL};
-    chiffre *tmp = i.premier;
-    while (tmp != NULL) {
-        res = ajoute_dernier(res, tmp->c);
-        tmp = tmp->suivant;
-    }
-    return res;
+    i.signe = '+';
+    return i;
 }
 
 // Prend un unbounded_int et renvoie son opposé
 static unbounded_int unbounded_int_oppose(unbounded_int i) {
-    char signe = '+';
-    if (i.signe == '+') signe = '-';
-    unbounded_int res = {.len = i.len, .signe = signe, .premier = NULL, .dernier = NULL};
-    chiffre *tmp = i.premier;
-    while (tmp != NULL) {
-        res = ajoute_dernier(res, tmp->c);
-        tmp = tmp->suivant;
-    }
-    return res;
+    if (i.signe == '+') i.signe = '-';
+    else i.signe = '+';
+    return i;
 }
 
 
@@ -227,36 +216,35 @@ int unbounded_int_cmp_ll(unbounded_int a, long long b) {
 
 // Prend deux unbounded_int et renvoie leur somme
 unbounded_int unbounded_int_somme(unbounded_int a, unbounded_int b) {
+    if(a.signe == '*' || b.signe == '*') exit(5);
+
     a = supprime_zero_inutile(a);
     b = supprime_zero_inutile(b);
-    if(a.signe == '*' || b.signe == '*') exit(5);
-    if(a.signe == '-' && b.signe == '+') return unbounded_int_difference(b, a);
-    if(a.signe == '+' && b.signe == '-') return unbounded_int_difference(a, b);
+    if(a.signe == '-' && b.signe == '+') return unbounded_int_difference(b, unbounded_int_oppose(a));
+    if(a.signe == '+' && b.signe == '-') return unbounded_int_difference(a, unbounded_int_oppose(b));
+
     char signe = '-';
     if(a.signe == '+' && b.signe == '+') signe = '+';
+
     unbounded_int res = {.len = 0, .signe = signe, .dernier = NULL, .premier = NULL};
     int reste = 0;
     chiffre *tmpA = a.dernier;
     chiffre *tmpB = b.dernier;
+
     while(tmpA != NULL || tmpB != NULL) {
         int chiffreA, chiffreB;
         if(tmpA != NULL) chiffreA = tmpA->c - '0';
         else chiffreA = 0;
+
         if(tmpB != NULL) chiffreB = tmpB->c - '0';
         else chiffreB = 0;
+
         int somme = chiffreA + chiffreB + reste;
         res = ajoute_premier(res, somme % 10 + '0');
         reste = somme / 10;
-        if(tmpA != NULL) {
-            tmpA = tmpA->precedent;
-        } else {
-            tmpA = NULL;
-        }
-        if(tmpB != NULL) {
-            tmpB = tmpB->precedent;
-        } else {
-            tmpB = NULL;
-        }
+
+        if(tmpA != NULL) tmpA = tmpA->precedent;
+        if(tmpB != NULL) tmpB = tmpB->precedent;
     }
     if(reste != 0) res = ajoute_premier(res, reste + '0');
     return res;
@@ -264,9 +252,10 @@ unbounded_int unbounded_int_somme(unbounded_int a, unbounded_int b) {
 
 // Prend deux unbounded_int et renvoie leur différence
 unbounded_int unbounded_int_difference(unbounded_int a, unbounded_int b) {
+    if (a.signe == '*' || b.signe == '*') exit(5);
+
     a = supprime_zero_inutile(a);
     b = supprime_zero_inutile(b);
-    if (a.signe == '*' || b.signe == '*') exit(5);
     if ((a.signe == '+' && b.signe == '-') || (a.signe == '-' && b.signe == '+')) return unbounded_int_somme(a, unbounded_int_oppose(b));
 
     int compare = unbounded_int_cmp_unbounded_int(unbounded_int_abs(a), unbounded_int_abs(b));
@@ -309,11 +298,7 @@ unbounded_int unbounded_int_difference(unbounded_int a, unbounded_int b) {
         }
 
         tmpA = tmpA->precedent;
-        if(tmpB != NULL) {
-            tmpB = tmpB->precedent;
-        } else {
-            tmpB = NULL;
-        }
+        if(tmpB != NULL) tmpB = tmpB->precedent;
     }
     res = supprime_zero_inutile(res);
     return res;
